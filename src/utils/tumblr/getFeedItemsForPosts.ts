@@ -61,12 +61,7 @@ export const getFeedItemsForPosts = (posts: LegacyPost[]): FeedItem[] => {
       post_footer.push(`<p>${unicode.check} Liked</p>`);
     }
 
-    // tumblr://x-callback-url/blog?blogName=tumblr-username
-    // tumblr://x-callback-url/blog?blogName=tumblr-username&postID=post-id
-    const tumblrPostURL = `http://www.tumblr.com/open/app?app_args=blog%3FblogName%3D${post.blog_name}%26page%3Dpermalink%26postID%3D${post.id}`;
-    post_footer.push(
-      `<p><a href="${tumblrPostURL}">View in Tumblr app</a></p>`
-    );
+    post_footer.push(`<p><a href="${post.post_url}">View Tumblr post</a></p>`);
 
     switch (post.type) {
       case 'photo':
@@ -111,11 +106,7 @@ export const getFeedItemsForPosts = (posts: LegacyPost[]): FeedItem[] => {
                   photo.original_size.height
                 ),
                 '</div>',
-                photo_desc,
-                ...(photo_desc.length > 0
-                  ? post_footer
-                  : post_footer.slice(1, post_footer.length)),
-                `<p>Post URL: <a href='${post.post_url}'>${post.post_url}</a></p>`,
+                ...photo_desc,
               ].join('\n\n');
 
               return {
