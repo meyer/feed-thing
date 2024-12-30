@@ -1,9 +1,10 @@
 import type { FeedItem } from '~/jsonfeed';
-import type { LegacyPost } from '~/utils/tumblr/tumblrApi';
+import { getHtmlForBlock } from '~/utils/tumblr/getHtmlForBlock';
+import type { TumblrPost } from '~/utils/tumblr/tumblrApi';
 import { unicode } from '~/utils/unicode';
 import { howmany, img, ucfirst, wrapHTMLMaybe } from '~/utils/utils';
 
-export const getFeedItemsForPosts = (posts: LegacyPost[]): FeedItem[] => {
+export const getFeedItemsForPosts = (posts: TumblrPost[]): FeedItem[] => {
   const feedItems: FeedItem[] = [];
 
   for (const post of posts) {
@@ -61,7 +62,9 @@ export const getFeedItemsForPosts = (posts: LegacyPost[]): FeedItem[] => {
       post_footer.push(`<p>${unicode.check} Liked</p>`);
     }
 
-    post_footer.push(`<p><a href="${post.post_url}">View Tumblr post</a></p>`);
+    post_footer.push(
+      `<p><a href="${post.post_url}" target="_blank" rel="noopener noreferrer">View on Tumblr</a></p>`
+    );
 
     switch (post.type) {
       case 'photo':
@@ -206,6 +209,11 @@ export const getFeedItemsForPosts = (posts: LegacyPost[]): FeedItem[] => {
           `<blockquote><p><strong>${asker}</strong>: ${post.question}</p></blockquote>`
         );
         post_content.push(post.answer);
+        break;
+      }
+
+      case 'blocks': {
+        post_content.push(getHtmlForBlock(post));
         break;
       }
 

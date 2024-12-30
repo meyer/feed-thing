@@ -21,6 +21,39 @@ const baseResponseSchema = s.type({
   response: s.unknown(),
 });
 
+const avatarSchema = s.type({
+  width: s.number(),
+  height: s.number(),
+  url: s.string(),
+});
+
+const blogSchema = s.type({
+  /** The display title of the blog */
+  title: s.string(),
+  /** The total number of posts to this blog */
+  posts: s.integer(),
+  /** The short blog name that appears before tumblr.com in a standard blog hostname */
+  name: s.string(),
+  /** The time of the most recent post, in seconds since the epoch */
+  updated: s.integer(),
+  /** You guessed it! The blog's description */
+  description: s.string(),
+  /** Indicates whether the blog allows questions */
+  ask: s.boolean(),
+  /** Indicates whether the blog allows anonymous questions; returned only if ask is true */
+  ask_anon: s.optional(s.boolean()),
+  /** Whether you're following the blog, returned only if this request has an authenticated user */
+  followed: s.boolean(),
+  /** Number of likes for this user, returned only if this is the user's primary blog and sharing of likes is enabled */
+  likes: s.optional(s.integer()),
+  /** Indicates whether this blog has been blocked by the calling user's primary blog; returned only if there is an authenticated user making this call */
+  is_blocked_from_primary: s.optional(s.boolean()),
+  /** An array of avatar objects, each a different size, which should each have a width, height, and URL. */
+  avatar: s.array(avatarSchema),
+  /** The blog's url */
+  url: s.string(),
+});
+
 export const authCodeSchema = s.type({
   /** The OAuth2 access token */
   access_token: s.string(),
@@ -294,7 +327,11 @@ const legacyAnswerPostSchema = makeLegacyPostSchema({
   answer: s.string(),
 });
 
-export type LegacyPost = s.Infer<typeof legacyPostSchema>;
+type LegacyPost = s.Infer<typeof legacyPostSchema>;
+
+export type NPFPost = s.Infer<typeof rootBlocksPostSchema>;
+
+export type TumblrPost = LegacyPost | NPFPost;
 
 const legacyPostSchema = s.union([
   legacyTextPostSchema,
@@ -306,6 +343,158 @@ const legacyPostSchema = s.union([
   legacyVideoPostSchema,
   legacyAnswerPostSchema,
 ]);
+
+const noOptionBlockFormattingSchema = s.type({
+  type: s.union([
+    s.literal('small'),
+    s.literal('strikethrough'),
+    s.literal('bold'),
+    s.literal('italic'),
+  ]),
+  start: s.number(),
+  end: s.number(),
+});
+
+const linkBlockFormattingSchema = s.type({
+  type: s.literal('link'),
+  url: s.string(),
+  start: s.number(),
+  end: s.number(),
+});
+
+const colorBlockFormattingSchema = s.type({
+  type: s.literal('color'),
+});
+
+const mentionBlockFormattingSchema = s.type({
+  type: s.literal('mention'),
+});
+
+const blockFormattingSchema = s.union([
+  noOptionBlockFormattingSchema,
+  linkBlockFormattingSchema,
+  colorBlockFormattingSchema,
+  mentionBlockFormattingSchema,
+]);
+
+const textBlockSchema = s.type({
+  type: s.literal('text'),
+  text: s.string(),
+  formatting: s.optional(s.array(blockFormattingSchema)),
+});
+
+const imageMediaBlockSchema = s.type({
+  media_key: s.optional(s.string()),
+  type: s.optional(s.string()),
+  url: s.string(),
+  width: s.number(),
+  height: s.number(),
+});
+
+const imageBlockSchema = s.type({
+  type: s.literal('image'),
+  media: s.array(imageMediaBlockSchema),
+});
+
+const rowLayoutSchema = s.type({
+  type: s.literal('rows'),
+});
+
+const postAttributionSchema = s.type({
+  type: s.literal('post'),
+  url: s.string(),
+  post: s.type({
+    id: s.string(),
+  }),
+  blog: s.type({
+    uuid: s.string(),
+    name: s.optional(s.string()),
+    url: s.optional(s.string()),
+  }),
+});
+
+const linkAttributionSchema = s.type({
+  type: s.literal('link'),
+  url: s.string(),
+});
+
+const appAttributionSchema = s.type({
+  type: s.literal('app'),
+  url: s.string(),
+  app_name: s.string(),
+  display_text: s.string(),
+});
+
+const blogAttributionSchema = s.type({
+  type: s.literal('blog'),
+  url: s.string(),
+  blog: s.type({
+    uuid: s.string(),
+    name: s.optional(s.string()),
+    url: s.optional(s.string()),
+  }),
+});
+
+const askLayoutSchema = s.type({
+  type: s.literal('ask'),
+  blocks: s.array(s.number()),
+  attribution: s.union([
+    postAttributionSchema,
+    linkAttributionSchema,
+    blogAttributionSchema,
+    appAttributionSchema,
+  ]),
+});
+
+const rootBlocksPostSchema = s.type({
+  type: s.literal('blocks'),
+  original_type: s.optional(s.string()),
+  is_blocks_post_format: s.optional(s.boolean()),
+  id: s.number(),
+  id_string: s.string(),
+  post_url: s.string(),
+  tags: s.array(s.string()),
+  notes: s.array(s.unknown()),
+  trail: s.array(s.unknown()),
+  layout: s.optional(s.array(s.union([rowLayoutSchema, askLayoutSchema]))),
+  content: s.lazy(() =>
+    s.array(s.union([textBlockSchema, imageBlockSchema, blocksPostSchema]))
+  ),
+  blog_name: s.string(),
+  liked: s.boolean(),
+  source_url: s.optional(s.string()),
+  source_title: s.optional(s.string()),
+  date: s.string(),
+  blog: s.type({
+    uuid: s.string(),
+    name: s.optional(s.string()),
+    title: s.optional(s.string()),
+    description: s.optional(s.string()),
+    url: s.optional(s.string()),
+  }),
+});
+
+type BlocksPostSchema = {
+  type: 'blocks';
+  content: Array<
+    | s.Infer<typeof textBlockSchema>
+    | s.Infer<typeof imageBlockSchema>
+    | BlocksPostSchema
+  >;
+};
+
+const blocksPostSchema: s.Describe<BlocksPostSchema> = s.type({
+  type: s.literal('blocks'),
+  content: s.lazy(() => {
+    return s.array(
+      s.union([textBlockSchema, imageBlockSchema, blocksPostSchema])
+    );
+  }),
+}) as any;
+
+export type BlockPost = s.Infer<typeof blocksPostSchema>;
+
+const postSchema = s.union([legacyPostSchema, rootBlocksPostSchema]);
 
 export const getRefreshToken = async (
   env: WorkerEnv,
@@ -442,39 +631,6 @@ export const getUserInfo = buildApiFunction(
   })
 );
 
-const avatarSchema = s.type({
-  width: s.number(),
-  height: s.number(),
-  url: s.string(),
-});
-
-const blogSchema = s.type({
-  /** The display title of the blog */
-  title: s.string(),
-  /** The total number of posts to this blog */
-  posts: s.integer(),
-  /** The short blog name that appears before tumblr.com in a standard blog hostname */
-  name: s.string(),
-  /** The time of the most recent post, in seconds since the epoch */
-  updated: s.integer(),
-  /** You guessed it! The blog's description */
-  description: s.string(),
-  /** Indicates whether the blog allows questions */
-  ask: s.boolean(),
-  /** Indicates whether the blog allows anonymous questions; returned only if ask is true */
-  ask_anon: s.optional(s.boolean()),
-  /** Whether you're following the blog, returned only if this request has an authenticated user */
-  followed: s.boolean(),
-  /** Number of likes for this user, returned only if this is the user's primary blog and sharing of likes is enabled */
-  likes: s.optional(s.integer()),
-  /** Indicates whether this blog has been blocked by the calling user's primary blog; returned only if there is an authenticated user making this call */
-  is_blocked_from_primary: s.optional(s.boolean()),
-  /** An array of avatar objects, each a different size, which should each have a width, height, and URL. */
-  avatar: s.array(avatarSchema),
-  /** The blog's url */
-  url: s.string(),
-});
-
 export const getBlogInfo = buildApiFunction(
   (blogIdentifier: string) => `/blog/${blogIdentifier}/info`,
   s.type({ blog: blogSchema })
@@ -542,9 +698,11 @@ export const getDashboard = buildApiFunction(
   (args?: GetDashboardArgs) => '/user/dashboard' + getQueryString(args),
   (data) => {
     s.assert(data, s.object({ posts: s.array(s.unknown()) }));
-    const posts: s.Infer<typeof legacyPostSchema>[] = [];
+    const posts: s.Infer<typeof postSchema>[] = [];
     for (const post of data.posts) {
-      s.assert(post, legacyPostSchema);
+      // @ts-expect-error
+      console.log('getDashboard -> post:', { ...post, notes: null });
+      s.assert(post, postSchema);
       posts.push(post);
     }
     return posts;
