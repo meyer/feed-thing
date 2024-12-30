@@ -1,6 +1,7 @@
 // @ts-check
 import cloudflare from '@astrojs/cloudflare';
 import { defineConfig } from 'astro/config';
+import { jsxstyle } from '@jsxstyle/astro/integration';
 
 import react from '@astrojs/react';
 
@@ -20,7 +21,7 @@ export default defineConfig({
     },
   }),
 
-  integrations: [react()],
+  integrations: [react(), jsxstyle()],
 
   build: {
     assets: '-',

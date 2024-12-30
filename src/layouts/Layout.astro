@@ -4,19 +4,8 @@ interface Props {
 }
 
 import '../reset.css';
-import { cache } from 'jsxstyle';
 
 const { title = 'Feed thing' } = Astro.props;
-
-cache.reset();
-let index = 0;
-
-const { css, returnValue: slotContent } = await cache.run(
-  async () => {
-    return (await Astro.slots.render('default')) || '';
-  },
-  () => '_x' + (index++).toString(36)
-);
 ---
 
 <!doctype html>
@@ -34,9 +23,6 @@ const { css, returnValue: slotContent } = await cache.run(
       media="(prefers-color-scheme: dark)"
     />
     <meta name="theme-color" content="#FFFFFF" />
-    <style data-source="jsxstyle" set:html={css} />
   </head>
-  <body>
-    <Fragment set:html={slotContent} />
-  </body>
+  <body><slot /></body>
 </html>

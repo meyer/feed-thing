@@ -25,7 +25,7 @@
     "enabled": true
   },
   "build": {
-    "command": "npm run build"
+    "command": "pnpm build"
   },
   "send_metrics": false
 }
