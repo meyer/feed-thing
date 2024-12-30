@@ -1,6 +1,6 @@
 # Well, well, well, what have we here…
 
-This thing that I have made turns different sites’ authenticated feed APIs into RSS feeds on a per-site basis. It’s built with Heroku in mind, but it should run on just about anything. Only Tumblr and Flickr are supported for now.
+This thing that I have made turns different sites’ authenticated feed APIs into RSS feeds on a per-site basis. It’s built with Cloudflare workers in mind. Only Tumblr and Flickr are supported for now.
 
 My motivation is twofold.
 
@@ -9,68 +9,45 @@ My motivation is twofold.
     This is an opinionated step in the other direction.
 2. Tumblr retains no read status and I follow a lot of people on Tumblr, which means I end up missing out on a lot of great stuff. RSS readers were built to solve this problem, but Tumblr lacks a private dashboard RSS feed, so I had to build my own.
 
-# How do I do the thing
+# Technical details
 
-1. Get authentication tokens for whatever services you plan on using.
-2. Save them in your local or remote environment so that this thing can use ’em.
+- Hosted on [Cloudflare Workers](https://workers.cloudflare.com/)
+- Built using [Astro](https://astro.build/)
 
-## Tumblr
+# How do I use this thing
 
-The easiest way to get required Tumblr auth tokens is to click “Explore API” on the [Tumblr app index page][tumblr-app-index] after you’ve generated a new application.
+1. Update the `wrangler.jsonc` file:
+    - (Optional) Update `name` to whatever subdomain name you want your thing to live at. Defaults to "feeds", which turns into `feeds.yourcloudflarename.workers.dev`.
+    - Change `kv_namespaces` to point to a KV namespace you own.
+    - Update `vars` to point to your Flickr/Tumblr keys and Flickr/Tumblr username/user ID.
+2. Run `pnpm dev` to test it locally.
+3. Run `pnpm run deploy` to push it up to your worker.
 
-![Keys!](README-generate-keys.png)
-
-That’ll take you to a developer console with your generated user tokens prefilled. Handy!
-
-Here are the environmental variables you’ll need to set:
-
-```sh
-TUMBLR_CONSUMER_KEY
-TUMBLR_CONSUMER_SECRET
-TUMBLR_TOKEN
-TUMBLR_TOKEN_SECRET
-```
-
-## Flickr
-
-Fire up this thing and visit `/flickr-photostream.rss`, then check your terminal. It’ll probably say something about authentication. Go to the URL it wants you to visit, approve the thing, then do all the other stuff it wants you to do. Copy the tokens it outputs and add them to your environment.
-
-You’ll need to set the following environmental variables:
-
-```sh
-FLICKR_API_KEY
-FLICKR_API_SECRET
-FLICKR_ACCESS_TOKEN
-FLICKR_ACCESS_TOKEN_SECRET
-```
 
 # Configuratin’
 
-Once you’ve got your auth tokens, set your environment variables. This is what that looks like for Heroku:
-
-```sh
-heroku config:set ENV_VARIABLE_NAME=value
+You’ll need to set two secrets on Cloudflare:
+```
+pnpm wrangler secret put TUMBLR_OAUTH_CONSUMER_SECRET
+pnpm wrangler secret put FLICKR_API_SECRET
 ```
 
-If you want to run this biz locally (and you do), make a `.env` file in the root of this folder with your environmental variables set. Should look a little something like this:
+If you want to run this biz locally (and you do), make a `.dev.vars` file in the root of this folder with those environmental variables set. Should look a little something like this:
 
 ```sh
-ENV_VARIABLE_NAME=value
+TUMBLR_OAUTH_CONSUMER_SECRET=*****
+FLICKR_API_SECRET=*****
 ```
 
-Once everything’s up and running, your RSS feeds will be available at `http://localhost:6969`. Check the terminal output for the different URLs you can visit.
+Once everything’s up and running, your RSS feeds will be available at http://localhost:4710. To authenticate with Tumblr, go to http://localhost:4710/tumblr. For Flickr: http://localhost:4710/tumblr.
 
 # TODO
-
-## Features
-* Use web-based auth flows to output auth tokens (should be pretty straightforward)
 
 ## Additional Feeds
 * Instagram (?)
 
 ---
 
-Questions/problems? File an issue and/or bug me [on Twitter][@meyer].
+Questions/problems? File an issue and/or bug me [on 🦋 Bluesky][@meyer].
 
-[tumblr-app-index]:https://www.tumblr.com/oauth/apps
-[@meyer]: http://twitter.com/meyer
+[@meyer]: https://bsky.app/profile/meyer.fm
