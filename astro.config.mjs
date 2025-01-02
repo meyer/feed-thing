@@ -1,7 +1,7 @@
 // @ts-check
 import cloudflare from '@astrojs/cloudflare';
-import { defineConfig } from 'astro/config';
 import { jsxstyle } from '@jsxstyle/astro/integration';
+import { defineConfig } from 'astro/config';
 
 import react from '@astrojs/react';
 

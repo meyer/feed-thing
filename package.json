@@ -12,7 +12,7 @@
     "deploy": "wrangler deploy",
     "format": "biome check --write .",
     "typecheck": "tsc --noEmit --diagnostics",
-    "generate-types": "wrangler types src/env-worker.d.ts --env-interface=WorkerEnv"
+    "generate-types": "wrangler types src/env-worker.d.ts --env-interface=WorkerEnv && biome format --write src/env-worker.d.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",

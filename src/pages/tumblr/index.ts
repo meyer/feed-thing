@@ -1,4 +1,4 @@
-import { invariant } from '@workers-utils/common';
+import { PublicMessageError, invariant } from '@workers-utils/common';
 import type { APIRoute } from 'astro';
 import * as s from 'superstruct';
 import {
@@ -33,7 +33,7 @@ export const GET: APIRoute = async (context) => {
     return context.redirect(authUrl.toString(), 302);
   }
 
-  invariant(stateParam === state, 'Invalid state');
+  invariant(stateParam === state, PublicMessageError, 'Invalid state');
 
   const result = await fetch('https://api.tumblr.com/v2/oauth2/token', {
     method: 'POST',
@@ -53,7 +53,10 @@ export const GET: APIRoute = async (context) => {
 
   invariant(
     result.status === 200,
-    'Something went wrong: ' + result.status + ' ' + result.statusText
+    PublicMessageError,
+    'An error occurred while verifying the oauth code: %s %s',
+    result.status,
+    result.statusText
   );
   s.assert(body, authCodeSchema);
 
@@ -62,11 +65,18 @@ export const GET: APIRoute = async (context) => {
     expires_at: Date.now() + body.expires_in * 1000,
   };
 
+  const allowedUsernames = await context.locals.runtime.env.AUTH.get(
+    'tumblr-usernames',
+    'json'
+  );
+  s.assert(allowedUsernames, s.array(s.string()));
+
   const userInfo = await getUserInfo(authData);
   invariant(
-    userInfo.user.name === context.locals.runtime.env.TUMBLR_USERNAME,
-    'Expected %s, received %s',
-    context.locals.runtime.env.TUMBLR_USERNAME,
+    allowedUsernames.includes(userInfo.user.name),
+    PublicMessageError,
+    'Username mismatch: expected one of %o, received %s',
+    allowedUsernames,
     userInfo.user.name
   );
 

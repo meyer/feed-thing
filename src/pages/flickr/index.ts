@@ -1,5 +1,6 @@
-import { invariant } from '@workers-utils/common';
+import { PublicMessageError, invariant } from '@workers-utils/common';
 import type { APIRoute } from 'astro';
+import * as s from 'superstruct';
 import {
   getAuthorizeUrl,
   getRequestToken,
@@ -45,10 +46,17 @@ export const GET: APIRoute = async (context) => {
 
   await context.locals.runtime.env.AUTH.delete(`flickr-token:${requestToken}`);
 
+  const allowedUsernames = await context.locals.runtime.env.AUTH.get(
+    'flickr-nsids',
+    'json'
+  );
+  s.assert(allowedUsernames, s.array(s.string()));
+
   invariant(
-    oauthResult.nsid === context.locals.runtime.env.FLICKR_NSID,
-    'Expected %s, received %s',
-    context.locals.runtime.env.FLICKR_NSID,
+    allowedUsernames.includes(oauthResult.nsid),
+    PublicMessageError,
+    'Username mismatch: expected one of %o, received %s',
+    allowedUsernames,
     oauthResult.nsid
   );
 
