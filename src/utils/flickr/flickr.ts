@@ -178,7 +178,9 @@ export const getFeedItemForPhoto = (
             Number.parseInt(photo.o_width, 10),
             Number.parseInt(photo.o_height, 10)
           )
-        : img(photo.url_l, photo.width_l, photo.height_l)) +
+        : photo.url_l && photo.width_l && photo.height_l
+          ? img(photo.url_l, photo.width_l, photo.height_l)
+          : '<strong>Missing url_o and url_l</strong>') +
       '</div>',
     getDescription(photo),
     getFooter(photo),

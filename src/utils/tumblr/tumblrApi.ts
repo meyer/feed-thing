@@ -358,7 +358,13 @@ export const getTumblrAuthDataFromKV = async (
     locals.runtime.env,
     kvResult.refresh_token
   );
-  await locals.runtime.env.AUTH.put(`tumblr:${uuid}`, JSON.stringify(newData));
+  await locals.runtime.env.AUTH.put(
+    `tumblr:${uuid}`,
+    JSON.stringify({
+      lastUpdated: new Date().toUTCString(),
+      ...newData,
+    })
+  );
   console.log(
     'New token expires at %s',
     new Date(newData.expires_at).toISOString()

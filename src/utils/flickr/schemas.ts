@@ -27,11 +27,11 @@ export const photoSchema = s.type({
   datetaken: s.string(),
   tags: s.string(),
   media: s.string(),
-  url_l: s.string(),
+  url_l: s.optional(s.string()),
   url_o: s.optional(s.string()),
-  height_l: s.number(),
-  width_l: s.number(),
-  pathalias: s.string(),
+  height_l: s.optional(s.number()),
+  width_l: s.optional(s.number()),
+  pathalias: s.nullable(s.string()),
 });
 
 export const photostreamSchema = s.type({
